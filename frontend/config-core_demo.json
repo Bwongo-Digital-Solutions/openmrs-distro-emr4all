@@ -15,7 +15,47 @@
       }
     }
   },
-  "@openmrs/esm-styleguide": {
-    "Brand color #1": "#005d5d"
-  }
+  "@openmrs/esm-patient-registration-app": {
+    "links": {
+      "submitButton": "${openmrsSpaBase}/post-registration/${patientUuid}"
+    },
+    "fieldConfigurations": {
+      "gender": [
+        {
+          "value": "male",
+          "label": "Male",
+          "display": "Male",
+          "name": "Male"
+        },
+        {
+          "value": "female",
+          "label": "Female",
+          "display": "Female",
+          "name": "Female"
+        }
+      ]
+    }
+  },
+    "@openmrs/esm-styleguide": {
+    "Brand color #1": "#00008B",
+    "Brand color #2": "#0000FF",
+    "Brand color #3": "#0E3386"
+  },
+  "@openmrs/esm-login-app": {
+      "logo": {
+        "src": "/openmrs/spa/logo.png",
+        "alt": "EMR4ALL e-Health Records System"
+      },
+      "background": {
+        "color": "white"
+      },
+      "footer": {
+      "additionalLogos": [
+        {
+          "src": "/openmrs/spa/bwongo.png",
+          "alt": "Emr4all"
+        }
+      ]
+    }
+    }
 }

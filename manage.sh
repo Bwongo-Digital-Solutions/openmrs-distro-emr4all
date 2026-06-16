@@ -43,20 +43,24 @@ Commands:
     logs            View logs from all services
     logs [service]  View logs from a specific service
     build           Build the Docker images
+    rebuild         Force rebuild Docker images without cache
     ps              Show running containers
     ssl             Start with SSL/HTTPS enabled
     grafana         Start with Grafana monitoring enabled
     ssl-grafana     Start with both SSL and Grafana enabled
+    copy-assets     Copy frontend assets to container without rebuilding
     clean           Remove all containers, volumes, and images
     cert-renew      Force SSL certificate renewal
     cert-check      Check SSL certificate expiration
     help            Show this help message
 
 Examples:
-    ./manage.sh up              # Start the application
-    ./manage.sh logs backend    # View backend logs
-    ./manage.sh ssl             # Start with SSL
-    ./manage.sh clean           # Clean up everything
+    ./manage.sh up                  # Start the application
+    ./manage.sh logs backend        # View backend logs
+    ./manage.sh ssl                 # Start with SSL
+    ./manage.sh rebuild             # Force rebuild all containers
+    ./manage.sh copy-assets         # Copy frontend assets without rebuild
+    ./manage.sh clean               # Clean up everything
 
 For more information, see README.md
 EOF
@@ -103,10 +107,55 @@ cmd_build() {
     print_success "Build completed!"
 }
 
+# Function to rebuild images without cache
+cmd_rebuild() {
+    print_info "Rebuilding Docker images without cache..."
+    docker compose build --no-cache
+    print_success "Rebuild completed!"
+}
+
 # Function to show running containers
 cmd_ps() {
     print_info "Running containers:"
     docker compose ps
+}
+
+# Function to copy frontend assets to container
+cmd_copy_assets() {
+    print_info "Copying frontend assets to container..."
+    
+    # Check if frontend container is running
+    FRONTEND_CONTAINER=$(docker compose ps -q frontend)
+    
+    if [ -z "$FRONTEND_CONTAINER" ]; then
+        print_error "Frontend container is not running!"
+        print_info "Please start the application first: ./manage.sh up"
+        exit 1
+    fi
+    
+    # Check if frontend assets directory exists
+    if [ ! -d "frontend" ]; then
+        print_error "Frontend directory not found!"
+        exit 1
+    fi
+    
+    # Copy assets to the running container
+    # Assuming the frontend container serves from /usr/share/nginx/html
+    print_info "Copying assets from ./frontend to frontend container..."
+    docker compose cp frontend/. frontend:/usr/share/nginx/html/ 2>/dev/null || {
+        print_warning "Could not copy to /usr/share/nginx/html, trying alternative paths..."
+        docker compose cp frontend/. frontend:/var/www/ || {
+            print_error "Failed to copy assets to frontend container"
+            exit 1
+        }
+    }
+    
+    # Restart frontend service to pick up changes
+    print_info "Restarting frontend service..."
+    docker compose restart frontend
+    
+    print_success "Frontend assets copied and service restarted!"
+    print_info "Changes should be visible at: http://localhost/openmrs/spa"
 }
 
 # Function to start with SSL
@@ -191,6 +240,9 @@ case "${1:-help}" in
     build)
         cmd_build
         ;;
+    rebuild)
+        cmd_rebuild
+        ;;
     ps)
         cmd_ps
         ;;
@@ -202,6 +254,9 @@ case "${1:-help}" in
         ;;
     ssl-grafana)
         cmd_ssl_grafana
+        ;;
+    copy-assets)
+        cmd_copy_assets
         ;;
     clean)
         cmd_clean
